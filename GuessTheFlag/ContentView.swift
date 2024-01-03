@@ -84,9 +84,10 @@ struct ContentView: View {
                                         .shadow(radius: 5)
                                 }
                                 .rotation3DEffect(
-                                    .degrees(animationAmount),
-                                                            axis: (x: 1.0, y: 0.0, z: 0.0)
+                                    .degrees(animationRotateAmount),
+                                                            axis: /*@START_MENU_TOKEN@*/(x: 0.0, y: 1.0, z: 0.0)/*@END_MENU_TOKEN@*/
                                 )
+                                
                             } else {
                                 Button {
                                     flagTapped(number)
@@ -96,8 +97,8 @@ struct ContentView: View {
                                         .shadow(radius: 5)
                                 }
                                 .rotation3DEffect(
-                                    .degrees(animationRotateAmount),
-                                                            axis: /*@START_MENU_TOKEN@*/(x: 0.0, y: 1.0, z: 0.0)/*@END_MENU_TOKEN@*/
+                                    .degrees(animationAmount),
+                                                            axis: (x: 1.0, y: 0.0, z: 0.0)
                                 )
                             }
                         }
@@ -153,9 +154,8 @@ struct ContentView: View {
             
             withAnimation {
                 animationAmount += 360
-            }
-            withAnimation {
                 animationRotateAmount += 360
+
             }
             
         } else {
