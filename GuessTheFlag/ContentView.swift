@@ -21,6 +21,17 @@ extension Color {
         self.init(red: redValue, green: greenValue, blue: blueValue)
     }
 }
+struct Shake: GeometryEffect {
+    var amount: CGFloat = 10
+    var shakesPerUnit = 3
+    var animatableData: CGFloat
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        ProjectionTransform(CGAffineTransform(translationX:
+            amount * sin(animatableData * .pi * CGFloat(shakesPerUnit)),
+            y: 0))
+    }
+}
 let countOfFlags = 3
 struct ContentView: View {
     @State private var countries = ["Estonia", "France", "Germany", "Ireland", "Italy", "Nigeria", "Poland", "Spain", "UK", "Ukraine", "US"].shuffled()
@@ -28,12 +39,12 @@ struct ContentView: View {
     @State private var score = 0
     let maxScore = 8
     @State private var showingAnswer = false
-    @State private var scoreTitle = ""
-    @State private var isWrongAnswer = false
+    @State private var scoreTitle = "Wrong"
     @State private var tappedFlag: Int = countOfFlags + 1
     @State private var questionCount = 1
     @State private var showingResult = false
-    
+    @State private var attempts: Int = 0
+
     @State private var animationRotateAmount = 0.0
     @State private var animationAmount = 0.0
     
@@ -63,34 +74,43 @@ struct ContentView: View {
                     
                 
                     ForEach(0..<3, id: \.self) {number in
-                        if number != tappedFlag {
-                            Button {
-                                flagTapped(number)
-                                animationAmount += 1
-                            } label: {
-                                Image(countries[number])
-                                    .clipShape(.capsule)
-                                    .shadow(radius: 5)
+                        if scoreTitle == "Correct" {
+                            if number != tappedFlag {
+                                Button {
+                                    flagTapped(number)
+                                } label: {
+                                    Image(countries[number])
+                                        .clipShape(.capsule)
+                                        .shadow(radius: 5)
+                                }
+                                .rotation3DEffect(
+                                    .degrees(animationAmount),
+                                                            axis: (x: 1.0, y: 0.0, z: 0.0)
+                                )
+                            } else {
+                                Button {
+                                    flagTapped(number)
+                                } label: {
+                                    Image(countries[number])
+                                        .clipShape(.capsule)
+                                        .shadow(radius: 5)
+                                }
+                                .rotation3DEffect(
+                                    .degrees(animationRotateAmount),
+                                                            axis: /*@START_MENU_TOKEN@*/(x: 0.0, y: 1.0, z: 0.0)/*@END_MENU_TOKEN@*/
+                                )
                             }
-                            .opacity(0.25)
-                            .rotation3DEffect(
-                                .degrees(animationAmount),
-                                                        axis: (x: 1.0, y: 0.0, z: 0.0)
-                            )
-                        } else {
-                            Button {
-                                flagTapped(number)
-                            } label: {
-                                Image(countries[number])
-                                    .clipShape(.capsule)
-                                    .shadow(radius: 5)
-                            }
-                            .rotation3DEffect(
-                                .degrees(animationRotateAmount),
-                                                        axis: /*@START_MENU_TOKEN@*/(x: 0.0, y: 1.0, z: 0.0)/*@END_MENU_TOKEN@*/
-                            )
                         }
-                                            
+                        else {
+                            Button {
+                                flagTapped(number)
+                            } label: {
+                                Image(countries[number])
+                                    .clipShape(.capsule)
+                                    .shadow(radius: 5)
+                            }
+                            .modifier(Shake(animatableData: CGFloat(attempts)))
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -113,7 +133,6 @@ struct ContentView: View {
             Button("Continue", action: askQuestion)
         } message: {
             Text("\(scoreTitle)! That's the flag of \(countries[tappedFlag])")
-            Text("Your score is \(score)/\(maxScore)")
         }
         .alert("Your result is \(score)/\(maxScore)", isPresented: $showingResult) {
             Button("Restart", action: newGame)
@@ -127,19 +146,23 @@ struct ContentView: View {
     }
     func flagTapped(_ number: Int) {
         tappedFlag = number
-
-        withAnimation {
-            animationRotateAmount += 360
-        }
-        withAnimation {
-            animationAmount += 90
-        }
-
+       
         if number == correctAnswer {
             scoreTitle = "Correct"
             score += 1
+            
+            withAnimation {
+                animationAmount += 360
+            }
+            withAnimation {
+                animationRotateAmount += 360
+            }
+            
         } else {
             scoreTitle = "Wrong"
+            withAnimation {
+                self.attempts += 1
+            }
         }
         if questionCount == 8 {
             showingAnswer = false
@@ -150,9 +173,8 @@ struct ContentView: View {
     }
     
     func askQuestion() {
-        animationAmount += 270
-        tappedFlag = countOfFlags + 1
         questionCount += 1
+        tappedFlag = countOfFlags + 1
         countries.shuffle()
         correctAnswer = Int.random(in: 0...2)
     }
